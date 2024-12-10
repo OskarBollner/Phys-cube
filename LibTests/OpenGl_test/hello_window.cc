@@ -1,33 +1,17 @@
+#include <cmath>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
+
+#include "shader.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 void processInput(GLFWwindow* window);
-
-void checkCompileSuccess(unsigned int);
-
-void checkLinkSuccess(unsigned int);
-
-const char* vertexShaderSource {
-    "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0"
-};
-
-const char* fragmentShaderSource {
-    "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "FragColor = vec4(1.0f, 0.5f, 0.2, 1.0f);\n"
-    "}\0"
-};
 
 int main()
 {
@@ -47,7 +31,7 @@ int main()
     }
     glfwMakeContextCurrent(window);
 
-    if (!gladLoadGLLoader( (GLADloadproc) glfwGetProcAddress ))
+    if (!gladLoadGLLoader( reinterpret_cast<GLADloadproc>(glfwGetProcAddress) ))
     {
         std::cout << "Failed to init GLAD" << std::endl;
         return -1;
@@ -60,36 +44,11 @@ int main()
 
     //
 
-    unsigned int vertexShader {glCreateShader(GL_VERTEX_SHADER)};
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    checkCompileSuccess(vertexShader);
-
-    unsigned int fragmentShader {glCreateShader(GL_FRAGMENT_SHADER)};
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    checkCompileSuccess(fragmentShader);
-
-    unsigned int shaderProgram {glCreateProgram()};
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    checkLinkSuccess(shaderProgram);
-
-    glUseProgram(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    //
-
     float vertices [] {
-        -0.5, 0.5, 0.5,
-        -0.5, -0.5, 0,
-        0.5,  -0.5, 0,
-        0.5, 0.5, 0
+        -0.5, 0.5, 0.5, 1.0, 0, 0,
+        -0.5, -0.5, 0, 0, 1.0, 0,
+        0.5,  -0.5, 0, 0, 0, 1.0,
+        0.5, 0.5, 0, 1.0, 1.0, 1.0,
     };
 
     unsigned int indices [] {
@@ -113,17 +72,25 @@ int main()
 
     //
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), static_cast<void*>(0));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), reinterpret_cast<void*>(0));
     glEnableVertexAttribArray(0);
 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), reinterpret_cast<void*>(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
     // 
+
+    Shader shader {"shader.vs", "shader.fs"};
 
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
         processInput(window);
-    
-        glUseProgram(shaderProgram);
+
+        shader.use();
+        float timeValue {static_cast<float>(glfwGetTime())};
+        double alpha {sin(timeValue)/2.0 + 0.5};
+        shader.setFloat("alpha", alpha);
+
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
