@@ -1,8 +1,8 @@
 SRCS := $(wildcard src/*.cc)
-CXXFlAGS := std=c++17 -Wall -Wextra -pedantic -Weffc++ -Wold-style-cast -fmax-errors=3 -g
+CXXFLAGS = -std=c++20 -Wall -Wextra -pedantic -Weffc++ -Wold-style-cast -fmax-errors=3 -g -O3
 BUILD_DIR := ./build
 EXEC := Phys-cube
-LDFLAGS := -lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl
+LDFLAGS = -lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 LIB := $(wildcard lib/*.o)
 
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)

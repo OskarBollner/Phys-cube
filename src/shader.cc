@@ -1,5 +1,34 @@
 #include "../inc/shader.h"
 
+Shader::Shader()
+: ID {glCreateProgram()}
+{
+    const char* vShaderCode {
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
+
+    "uniform mat4 model;\n"
+    "uniform mat4 view;\n"
+    "uniform mat4 projection;\n"
+
+    "void main()\n"
+    "{\n"
+    "   gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+    "}\0"
+    };
+
+    const char* fShaderCode {
+    "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "uniform vec3 color;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = vec4(color, 1.0f);\n"
+    "}\n\0"
+    };
+    initShader(vShaderCode, fShaderCode);
+}
+
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 : ID {glCreateProgram()}
 {
@@ -32,9 +61,39 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 
     const char* vShaderCode {vertexCode.c_str()};
     const char* fShaderCode {fragmentCode.c_str()};
+    initShader(vShaderCode, fShaderCode);
+}
 
-    unsigned int vertex, fragment;
-    int success;
+void Shader::use() const
+{
+    glUseProgram(ID);
+}
+
+void Shader::setBool(std::string const& name, bool value) const
+{
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), static_cast<int>(value));
+}
+
+void Shader::setInt(std::string const& name, int value) const
+{
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+}
+
+void Shader::setFloat(std::string const& name, float value) const
+{
+    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+}
+
+void Shader::setColor(std::string const& name, glm::vec3 const& color) const
+{
+    glUniform3f(glGetUniformLocation(ID, name.c_str()), color.x, color.y, color.z);
+}
+
+void Shader::initShader(const char* vShaderCode, const char* fShaderCode)
+{
+    unsigned int vertex {};
+    unsigned int fragment {};
+    int success {};
     char infolog[512];
 
     // vertexShader
@@ -75,24 +134,4 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     }
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-}
-
-void Shader::use()
-{
-    glUseProgram(ID);
-}
-
-void Shader::setBool(std::string const& name, bool value) const
-{
-    glUniform1i(glGetUniformLocation(ID, name.c_str()), static_cast<int>(value));
-}
-
-void Shader::setInt(std::string const& name, int value) const
-{
-    glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
-}
-
-void Shader::setFloat(std::string const& name, float value) const
-{
-    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }

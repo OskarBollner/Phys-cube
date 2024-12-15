@@ -1,18 +1,17 @@
 #pragma once
 
-#include "body.h"
-#include "shader.h"
+#include "shape.h"
 
-static float const PI {3.141592};
-
-class Particle : public Body
+class Particle
 {
 public:
-    Particle(glm::vec3 const&, Shader const&, size_t const);
+    Particle(glm::vec3 const&, Shape const&);
     ~Particle() = default;
-    
-    void render() const override;
+
+    inline Shape const& getShape() const { return shape; }
+    inline glm::vec3 const& getPos() const { return pos; }
 
 private:
-    size_t radius;
+    glm::vec3 pos;
+    Shape shape;
 };
