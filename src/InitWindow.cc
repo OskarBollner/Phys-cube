@@ -42,18 +42,26 @@ InitWindow::~InitWindow()
     {
         delete shape;
     }
+    for (Shape* shape : shapes)
+    {
+        delete shape;
+    }
     glfwTerminate();
 }
 
 void InitWindow::run()
 {
-
+    double prevtime {glfwGetTime()};
+    double dt {};
     while (!glfwWindowShouldClose(window))
     {
+        dt = glfwGetTime() - prevtime;
+        prevtime = glfwGetTime();
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         processInput();
-        
-        update(0.01f);
+
+        update(dt);
 
         render();
 
@@ -67,39 +75,26 @@ void InitWindow::processInput()
     {
         glfwSetWindowShouldClose(window, true);
     }
-    else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-    {
-        shapes.push_back(new Shape{Shape::Rectangle(Color::BLUE)});
-    }
-    else if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-    {
-        shapes.push_back(new Shape{Shape::Circle(Color::RED)});
-    }
-    else if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
-    {
-        shapes.push_back(new Shape{Shape::Triangle(Color::GREEN)});
-    }
     else if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
     {
-        objects.push_back(new Particle{glm::vec3{0,0,-10}, Shape::Cube(Color::GREEN)});
+        objects.push_back(new Particle{glm::vec3{-1,0,-10}, Shape::getCircle(Color::GREEN)});
     }
 }
 
-void InitWindow::update(float dt)
+void InitWindow::update(double dt)
 {
-    // Do something.
+    for(auto& object : objects)
+    {
+        object->update(dt);
+    }
 }
 
 void InitWindow::render()
 {
     for(auto& object : objects)
     {
-        Draw(object->getShape(), object->getPos());
+        Draw(*object);
     }
-    //for(auto& object : shapes)
-    //{
-    //    Draw(*object, glm::vec3{0,0,-10});
-    //}
 
     glfwSwapBuffers(window);
 }

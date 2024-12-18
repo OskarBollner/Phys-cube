@@ -18,7 +18,7 @@ public:
     void run();
 private:
     void processInput();
-    void update(float);
+    void update(double);
     void render();
 
     std::vector<Particle*> objects;

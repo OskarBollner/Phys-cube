@@ -1,23 +1,28 @@
 #include "../inc/shape.h"
 
+#include <iostream>
 
 Shape::Shape(std::vector<float> const& vertexData, Shader const& shader)
-: shader{shader}, vertexData{vertexData}, VAO{}, VBO{}
+: shader{shader}, vertices{vertexData}, VAO{}, VBO{}
 {
     initRenderData();
 }
 
 Shape::Shape(std::vector<float> const& vertexData, Shader const& shader, Color color)
-: shader{shader}, vertexData{vertexData}, VAO{}, VBO{}
+: shader{shader}, vertices{vertexData}, VAO{}, VBO{}
 {
+    if (glfwInit() == GLFW_TRUE){};
     initRenderData();
     shader.use();
     shader.setColor("color", tovec3(color));
 }
 
+Shape::Shape(Shape const& other)
+: shader{other.shader}, vertices{other.vertices}, VAO{other.VAO}, VBO{other.VBO}
+{}
+
 Shape::~Shape()
 {
-
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &VAO);
 }
@@ -35,7 +40,7 @@ void Shape::initRenderData()
     glBindVertexArray(VAO);
     
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
     
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), reinterpret_cast<void*>(0));
     glEnableVertexAttribArray(0);
@@ -44,90 +49,84 @@ void Shape::initRenderData()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-Shape Shape::Triangle(Color color)
-{
-    std::vector<float> vertices
-    {
-            -0.5f, -0.5f, 0.0f, // left
-            0.5f, -0.5f, 0.0f,  // right
-            0.0f, 0.5f, 0.0f    // top
+const Shape& Shape::getTriangle(Color color) {
+    static Shape* triangle { new Shape {
+            {
+            -0.5f, -0.5f, 0.0f,
+             0.5f, -0.5f, 0.0f,
+             0.0f,  0.5f, 0.0f
+            },
+            Shader{},
+            color
+        }
     };
 
-    return Shape{vertices, Shader{}, color};
+    std::cout << "ShaderID: " << triangle->shader.ID << std::endl;
+    std::cout << "VAO: " << triangle->VAO << std::endl;
+    std::cout << "VBO: " << triangle->VBO << std::endl;
+    return *triangle;
 }
 
-Shape Shape::Rectangle(Color color)
-{
-    std::vector<float> vertices
-    {
-        -0.5f, -0.5f, 0.0f,  // Center (Bottom-left)
-        0.5f, -0.5f, 0.0f,  // Bottom-right
-        0.5f, 0.5f, 0.0f,  // Top-right
-        -0.5f, 0.5f, 0.0f
+const Shape& Shape::getRectangle(Color color) {
+    static Shape* rectangle { new Shape {
+        {
+        -0.5f, -0.5f, 0.0f,
+         0.5f, -0.5f, 0.0f,
+         0.5f,  0.5f, 0.0f,
+        -0.5f,  0.5f, 0.0f
+        },
+        Shader{},
+        color
+        }
     };
-
-    return Shape{vertices, Shader{}, color};
+    return *rectangle;
 }
 
-Shape Shape::Circle(Color color)
-{
-    int segments = 36;
-    std::vector<float> vertices;
-    vertices.push_back(0.f);
-    vertices.push_back(0.f);
-    vertices.push_back(0.f);
+const Shape& Shape::getCircle(Color color) {
+    static std::vector<float> vertices = []() {
+        int segments = 36;
+        std::vector<float> vtx;
+        vtx.push_back(0.0f); // Center vertex
+        vtx.push_back(0.0f);
+        vtx.push_back(0.0f);
 
-    for (int i = 0; i <= segments; ++i) {
-        float angle = (i * 2 * M_PI) / segments;
-        vertices.push_back(cos(angle) * 0.5f);
-        vertices.push_back(sin(angle) * 0.5f);
-        vertices.push_back(0.0f);
+        for (int i = 0; i <= segments; ++i) {
+            float angle = (i * 2 * M_PI) / segments;
+            vtx.push_back(std::cos(angle) * 0.5f);
+            vtx.push_back(std::sin(angle) * 0.5f);
+            vtx.push_back(0.0f);
+        }
+        return vtx;
+    }();
+
+    static Shape* circle {new Shape {vertices, Shader{}, color} };
+    return *circle;
+}
+
+//const Shape Shape::Cube {std::vector<float>{}};
+
+namespace Drawing {
+
+    void drawHelper(Shader const& shader, Shape const& shape, glm::vec3 pos)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, pos);
+
+        glm::mat4 view = glm::mat4(1.0f);
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+        glm::mat4 projection;
+        projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+
+        int modelLoc = glGetUniformLocation(shader.ID, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        int viewLoc = glGetUniformLocation(shader.ID, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        int projectionLoc = glGetUniformLocation(shader.ID, "projection");
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        glBindVertexArray(shape.getVAO());
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, shape.getVertexData().size()/3);
+        glBindVertexArray(0);
     }
-
-    return Shape{vertices, Shader{}, color};
-}
-
-Shape Shape::Cube(Color color)
-{
-    std::vector<float> vertices
-    {
-         0.0f,  0.0f,  0.5f,  // Center of the front face
-        -0.5f, -0.5f,  0.5f,  // Bottom-left
-         0.5f, -0.5f,  0.5f,  // Bottom-right
-         0.5f,  0.5f,  0.5f,  // Top-right
-        -0.5f,  0.5f,  0.5f,  // Top-left
-        -0.5f, -0.5f,  0.5f,   // Repeat Bottom-left to close the fanstd::vector<float> backFace = {
-         0.0f,  0.0f, -0.5f,  // Center of the back face
-        -0.5f, -0.5f, -0.5f,  // Bottom-left
-        -0.5f,  0.5f, -0.5f,  // Top-left
-         0.5f,  0.5f, -0.5f,  // Top-right
-         0.5f, -0.5f, -0.5f,  // Bottom-right
-        -0.5f, -0.5f, -0.5f,   // Repeat Bottom-left to close the fan§
-         0.0f,  0.5f,  0.0f,  // Center of the top face
-        -0.5f,  0.5f,  0.5f,  // Top-left-front
-         0.5f,  0.5f,  0.5f,  // Top-right-front
-         0.5f,  0.5f, -0.5f,  // Top-right-back
-        -0.5f,  0.5f, -0.5f,  // Top-left-back
-        -0.5f,  0.5f,  0.5f,   // Repeat Top-left-front
-         0.0f, -0.5f,  0.0f,  // Center of the bottom face
-        -0.5f, -0.5f, -0.5f,  // Bottom-left-back
-         0.5f, -0.5f, -0.5f,  // Bottom-right-back
-         0.5f, -0.5f,  0.5f,  // Bottom-right-front
-        -0.5f, -0.5f,  0.5f,  // Bottom-left-front
-        -0.5f, -0.5f, -0.5f,   // Repeat Bottom-left-back
-        -0.5f,  0.0f,  0.0f,  // Center of the left face
-        -0.5f, -0.5f, -0.5f,  // Bottom-left-back
-        -0.5f,  0.5f, -0.5f,  // Top-left-back
-        -0.5f,  0.5f,  0.5f,  // Top-left-front
-        -0.5f, -0.5f,  0.5f,  // Bottom-left-front
-        -0.5f, -0.5f, -0.5f,   // Repeat Bottom-left-back
-         0.5f,  0.0f,  0.0f,  // Center of the right face
-         0.5f, -0.5f,  0.5f,  // Bottom-right-front
-         0.5f,  0.5f,  0.5f,  // Top-right-front
-         0.5f,  0.5f, -0.5f,  // Top-right-back
-         0.5f, -0.5f, -0.5f,  // Bottom-right-back
-         0.5f, -0.5f,  0.5f
-         };
-
-    return Shape{vertices, Shader{}, color};
-}
+};

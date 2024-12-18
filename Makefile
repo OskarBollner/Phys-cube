@@ -1,5 +1,5 @@
 SRCS := $(wildcard src/*.cc)
-CXXFLAGS = -std=c++20 -Wall -Wextra -pedantic -Weffc++ -Wold-style-cast -fmax-errors=3 -g -O3
+CXXFLAGS = -std=c++20 -Wall -Wextra -pedantic -Weffc++ -Wold-style-cast -fmax-errors=3 -g
 BUILD_DIR := ./build
 EXEC := Phys-cube
 LDFLAGS = -lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl

@@ -1,11 +1,10 @@
-#pragma once
+#ifndef SHAPE_H
+#define SHAPE_H
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <iostream>
-#include <concepts>
 #include <vector>
 
 #include "shader.h"
@@ -44,20 +43,21 @@ class Shape
 public:
     Shape(std::vector<float> const&, Shader const&);
     Shape(std::vector<float> const&, Shader const&, Color);
+    Shape(Shape const&);
     ~Shape();
 
-    static Shape Triangle(Color = Color::PURPLE);
-    static Shape Rectangle(Color = Color::PURPLE);
-    static Shape Circle(Color = Color::PURPLE);
-    static Shape Cube(Color = Color::PURPLE);
+    static const Shape& getTriangle(Color);
+    static const Shape& getRectangle(Color);
+    static const Shape& getCircle(Color);
+    static const Shape& getCube(Color);
 
     inline unsigned int getVAO() const { return VAO; }
     inline Shader const& getShader() const { return shader; }
-    inline std::vector<float> const& getVertexData() const { return vertexData; }
+    inline std::vector<float> const& getVertexData() const { return vertices; }
 
 private:
     Shader const shader;
-    std::vector<float> const vertexData;
+    std::vector<float> const vertices;
     unsigned int VAO;
     unsigned int VBO;
 
@@ -65,3 +65,5 @@ private:
 };
 
 #include "draw.tcc"
+
+#endif //SHAPE_H

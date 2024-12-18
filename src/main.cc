@@ -2,7 +2,7 @@
 
 int main()
 {
-    InitWindow game {800, 600, "Test"};
+    InitWindow game {2000, 1200, "Test"};
 
     game.run();
     
